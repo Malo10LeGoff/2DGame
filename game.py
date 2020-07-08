@@ -5,18 +5,23 @@ Created on Tue Jul  7 11:31:22 2020
 @author: LENOVO
 """
 
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Jul  7 11:31:22 2020
+
+@author: LENOVO
+"""
+
+### Imports and Initialization
+
 import pygame
 import time
 import random
-#from game import Game
+pygame.mixer.pre_init(44100, 16, 2, 4096) #frequency, size, channels, buffersize to initialize before playing a song with pygame
 pygame.init()
-print(time.time())
 
-
-
-def check_collisions(sprite, group): ### check if a sprite collides with a groupe of sprite
-    return pygame.sprite.spritecollide(sprite, group, False, pygame.sprite.collide_mask )  ### The parameter false says that if the player touches the monster he doesn't die right away
-        ### collide_mask is the type of collision
+        
+        
 ### Class player
 
 class Player(pygame.sprite.Sprite):  ### Sprite is the original class for graphic component
@@ -72,13 +77,14 @@ class Player(pygame.sprite.Sprite):  ### Sprite is the original class for graphi
         if self.health < 0 :
             running = False
             pygame.quit()
-        
+  
+### Class Monster      
         
 class Monster(pygame.sprite.Sprite):
     def __init__(self):
         super(Monster,self).__init__()
         self.health = 100
-        self.velocity = 3 + random.randint(0,4)
+        self.velocity = 1 + random.randint(0,4)
         self.attack = 0.3
         self.max_health = 100
         self.image = pygame.image.load("mummy.png")
@@ -115,17 +121,13 @@ class Monster(pygame.sprite.Sprite):
             self.all_monsters.remove(self)
         
         
-        
-def spawn_monster():
-    m = Monster()
-    m.all_monsters.add(m)
-    return m
 
+### Class Fireball
 
 class Fireball(pygame.sprite.Sprite):
     def __init__(self, player):
         super(Fireball,self).__init__()
-        self.velocity = 5
+        self.velocity = 2
         self.image = pygame.image.load("projectile.png")
         self.image=pygame.transform.scale(self.image,(75,75))
         self.rect = self.image.get_rect()
@@ -140,6 +142,9 @@ class Fireball(pygame.sprite.Sprite):
             monster.damage(10)
         if self.rect.x > 1080:
             player.all_fireball.remove(self)
+            
+            
+### Class Lightning
             
             
 class Lightning(pygame.sprite.Sprite):
@@ -157,7 +162,21 @@ class Lightning(pygame.sprite.Sprite):
         player.all_lightning.remove(self)
         for monster in all_monster:
             monster.damage(30)
+            
     
+        
+def spawn_monster():
+    m = Monster()
+    m.all_monsters.add(m)
+    return m
+    
+def check_collisions(sprite, group): ### check if a sprite collides with a groupe of sprite
+    return pygame.sprite.spritecollide(sprite, group, False, pygame.sprite.collide_mask )  ### The parameter false says that if the player touches the monster he doesn't die right away
+        ### collide_mask is the type of collision
+        
+        
+### Play the game
+
 ### Generate game window
 
 pygame.display.set_caption("Game")
@@ -165,8 +184,9 @@ screen = pygame.display.set_mode((1000,600))
 running = True
 background = pygame.image.load("vg2.jpg")
 
-all_players = pygame.sprite.Group()
+### Creation of Players and Monsters
 
+all_players = pygame.sprite.Group()
 player = Player()
 all_players.add(player)
 
@@ -174,26 +194,42 @@ monster = spawn_monster()
 monster2 = spawn_monster()
 monster3 = spawn_monster()
 
+
+### Pressed keys
+
 pressed = {'right_arrow' : False,
            'left_arrow' : False}
 
+
 while(running):
+    
+    ### Dispralying the background and the player
+    
     screen.blit(background,(0,0))
     screen.blit(player.image,player.rect)
-    #screen.blit(monster.image,(800,325))
+    
+    ### Sound creation
+    
+    sound = pygame.mixer.Sound("sound.wav")
+    sound.play()
     
     player.update_health_bar(screen)
+    
+    
     ### Player motion
     if pressed['right_arrow'] == True and player.rect.x < screen.get_width():
         player.move_right(monster.all_monsters)
     if pressed['left_arrow'] == True and player.rect.x > 0:
         player.move_left()
         
+    ### Fireballs motions
         
     for fireball in player.all_fireball:
         fireball.move(monster.all_monsters)
         
-        
+     
+    ### Drawing of the lightnings and the fireballs
+    
     player.all_lightning.draw(screen)    
     player.all_fireball.draw(screen)
     
@@ -201,15 +237,20 @@ while(running):
     for light in player.all_lightning:
         light.erase(monster.all_monsters)
         
+    ### Monsters motions and health bars
+        
     for monst in monster.all_monsters:
-        #print("Loop entered")
         monst.forward(all_players)
         monst.update_health_bar(screen)
+        
+    ### Drawing of all the monsters
         
     monster.all_monsters.draw(screen)
 
         
     pygame.display.flip() ### update the display
+    
+    ### Handling of the key pressed by the player
     
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
